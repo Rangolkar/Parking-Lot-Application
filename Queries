@@ -1,0 +1,475 @@
+1] AssignZoneToLot (...): 
+
+INSERT INTO `dbms`.`zone`
+(`name`,
+`zones`)
+VALUES(<{name: }>,<{zones: }>);
+
+2] AddLot (... ): This function should take parking lot unique identifier and address of lot, number of
+spaces in lot, beginning space number, initial zone designation (single zone initially).
+
+INSERT INTO `dbms`.`parkinglot`
+(`name`,
+`address`,
+`totalspaces`)
+VALUES
+(<{name: }>,<{address: }>,<{totalspaces: }>);
+
+INSERT INTO `dbms`.`zone`
+(`name`,
+`zones`)
+VALUES(<{name: }>,<{zones: }>);
+
+Then Insert into the Space column : For handicap, electric and visitor spacing details
+
+INSERT INTO `dbms`.`space`
+(`parkinglot`,`visitor_spaces`,`visitor_handicap_space`,`visitor_electric_space`,`starting_space_visitor`,`starting_space_handicap`,`starting_space_electric`)
+VALUES('$$$$$',$,$,$,$,$,$);
+
+3] Show the list of zones for each lot as tuple pairs (lot, zone).
+
+SELECT * 
+FROM ZONE
+WHERE name='centennial';
+
+4] Get vehicle information for a particular univid
+
+SELECT * 
+FROM vehicles
+WHERE univid='pkshivra';
+
+5] Get permit information for a given employee
+
+SELECT n.permitid, n.zoneid, n.startdate, n.expdate, n.exptime, n.type, v.carlicenseno 
+FROM nvpermit n, vehicles v
+WHERE ( n.univid='$$$$$' AND n.univid=v.univid);
+
+6] Find an available space# for Visitor for an electric vehicle in a specific parking lot: JusticeLot
+
+SELECT parkinglot, starting_space_electric AS space_number
+FROM space
+WHERE (parkinglot='$$$$$' AND visitor_spaces > 0 AND visitor_electric_Space > 0);
+
+7] ChangeVehicleList(): this is to allow university users (employees) modify the vehicles on
+their permit. They may remove or add vehicles. However, note the students can only
+have one vehicle on a permit at a time, employees up to 5. The input to this should be
+the permit number and univid (use for verifying if the correct user is making the
+modification)
+
+####Checking number of vehicles registered on the permitd####
+SELECT *                                        
+FROM vehicles v, nvpermit n
+WHERE (n.univid = v.univid AND n.permitid = '20OA11AA')
+
+####Gives the option to delete a specific registered car####
+SELECT v.carlicenseno 
+FROM vehicles v, nvuser n
+WHERE (v.univid = n.univid AND n.univid = 'pkshivra' AND n.type='employee');
+
+DELETE 
+FROM vehicles
+WHERE carlicenseno='INPUT';
+
+####Adding vehicle to permit#### ( Not allowed to type=student if one already added and not more than 5 for employee ) ####
+
+query 1 : First check if univid is of student or employee
+
+SELECT type
+FROM nvuser
+WHERE univid ='$$$$$'
+
+then get the output to insert ahead in below query if employee
+
+INSERT INTO `dbms`.`vehicles`
+(`carlicenseno`,`year`,`model`,`color`,`manufacturer`,`univid`)
+SELECT
+'test7','0','test','test','test','univid'
+WHERE EXISTS
+(SELECT * 
+FROM nvuser 
+WHERE (univid='$$$$$' AND type='query 1'
+AND 
+(SELECT COUNT(*) < 2
+FROM vehicles
+WHERE univid='$$$$$')));
+
+if student 
+
+INSERT INTO `dbms`.`vehicles`
+(`carlicenseno`,`year`,`model`,`color`,`manufacturer`,`univid`)
+SELECT
+'test7','0','test','test','test','univid'
+WHERE EXISTS
+(SELECT * 
+FROM nvuser 
+WHERE (univid='$$$$$' AND type='$$$$$'
+AND 
+(SELECT COUNT(*) < 1
+FROM vehicles
+WHERE univid='$$$$$')));
+
+8] AssignPermit (univid, type, zone, ...…. ): assigns a permit to user with univid for parking
+zone given in input and type (default is used if no input is given). Things like expiration
+etc are computed based on the description given earlier.
+
+Non Visitor Permit : employee 12 months and student 4 months
+
+First check if employee or student : 
+
+SELECT type
+FROM nvuser
+WHERE univid='$$$$$'
+
+<<<<< Function to generate a permit id here >>>>>
+
+if employee : 
+
+create variables with stored values for 
+start date = todays date
+exp date = start date + 12 months
+
+if student : 
+
+start date = todays date
+exp date = start date + 4 months
+
+then 
+
+INSERT INTO fields (`permitid`,`univid`,`zoneid`,`startdate`,`expdate`,`exptime`,`type`)
+VALUES ('$','$','$','$','$','$','$');
+
+9] GetVisitorPermit (Lot, duration, time beginning, type = default is standard, …).
+
+Needed info will be (phoneno, carlicenseno, carlicenseno, year, model, color, manufacturer, lot, duration, begin time, type)
+
+Visitor Permit : expiration is requested time added into start time (Allotted by user requesting)
+
+Visitor permits are generated on the spot : 
+
+So when he arrives first steps is to take his car license number and phone number to update the vuser table : 
+
+INSERT INTO `dbms`.`vuser`(`phoneno`,`carlicenseno`)
+VALUES ('$$$$$','$$$$$')
+
+then we need to update his car details to keep the track and this also helps in generating the permit id table with additional details to fill in : 
+
+INSERT INTO `dbms`.`vehicles` (`carlicenseno`,`year`,`model`,`color`,`manufacturer`,`univid`)
+VALUES ('$$$$$','$$$$$','$$$$$','$$$$$','$$$$$',NULL)
+
+#############
+If input is for visitor with regular as type
+
+SELECT parkinglot
+FROM space
+WHERE visitor_spaces > 0;
+
+If input is for visitor with handicap as type
+
+SELECT parkinglot
+FROM space
+WHERE (visitor_spaces > 0 AND visitor_handicap_space > 0);
+
+If input is for visitor with electric as type
+
+SELECT parkinglot
+FROM space
+WHERE (visitor_spaces > 0 AND visitor_electric_space > 0);
+
+#############
+
+Then select a parking lot from the options provided from any of the above queries : 
+
+use that parking lot to get the space number and save it for visitor in that lot :
+
+#############
+
+pick the visitor/handicap/electric spaceno alloted
+
+SELECT starting_space_visitor 
+FROM space
+WHERE parkinglot='$$$$$';
+
+Same can be used to fetch for starting_space_handicap and starting_space_electric from specific parking lot which is selected above
+
+##############
+
+<<<<< Function to generate a permit id value here >>>>>
+
+begintime variable = starttime
+endtime variable = starttime + specified duration
+begindate variable = begindate
+enddate variable = enddate
+
+then insert into the table and also print the same : 
+
+INSERT INTO `dbms`.`vpermit`
+(`permitid`,`zoneid`,`licenseno`,`startdate`,`expdate`,`exptime`,`type`,`spaceno`,`starttime`,`lotname`)
+VALUES
+('$$$$$','$$$$$','$$$$$','$$$$$','$$$$$','$$$$$','$$$$$','$$$$$','$$$$$','$$$$$')
+
+After this a trigger will be created in vpermit to update the space table  
+
+print('$$$$$','$$$$$','$$$$$','$$$$$','$$$$$','$$$$$','$$$$$','$$$$$','$$$$$','$$$$$')
+
+10] How many employees have permits for parking Zone X
+
+##To get the count##
+
+SELECT count(*)
+FROM nvpermit
+WHERE zoneid = 'D';
+
+##To get the names of employees##
+
+SELECT univid
+FROM nvpermit
+WHERE zoneid = 'D';
+
+11] For lotX, generate the number of visitor permits in a date range, grouped by permit type
+e.g. regular, electric, handicapped.
+
+date format - YYYY-MM-DD
+
+SELECT type, count(type)
+FROM vpermit
+WHERE (lotname='$$' AND startdate >= '$$$$$' AND expdate <= '$$$$$')
+GROUP BY type;
+
+12] CheckNVValidParking( time, permit id ): checks valid parking in nonvisitor parking lot.
+
+As per discussion the new inputs will be (CurrentTime, Zone, License)
+
+First check if any such license exits in permits database : 
+
+SELECT n.permitid
+FROM nvpermit n, vehicles v
+WHERE (v.carlicenseno='$$$$$' AND v.univid=n.univid);
+
+If yes then valid and go to next check, else fine him for NO PERMIT category with fine of $40 lot = 'NULL'
+
+time in format hh:mm:ss
+date in format yyyy-mm-dd ## tis expired permit step is optional as we dont give date in input ## to be discussed 
+current date stored in a variable
+
+SELECT permitid, zoneid
+FROM nvpermit
+WHERE expdate > '$$$$$' and permitid = '$$$$$';
+
+If valid then next step else issues a expired permit citation with fine of $25 and lot = 'NULL'
+
+First check if student or employee 
+
+SELECT n.type
+FROM nvuser n, vehicles v
+WHERE v.carlicenseno='MH-0001' and n.univid=v.univid;
+
+For Student : 
+if currenttime > 17:00:00 AND currenttime < 08:00:00
+ then its valid if his zone = (input zone) OR zone = (input zone[0]) else not valid 
+elif currenttime < 17:00:00 AND currenttime > 08:00:00 
+ then its valid if his zone = (input zone) else not valid
+ 
+For employee : 
+if his zone = (input zone) OR zone = (input zone[0]) then valid else not valid
+
+For valid scenarios do nothing but if invalid, create citation with category of invalid and fine of $20 and lot = 'NULL'
+
+13] Find any cars that are currently in violation
+
+SELECT carlicenseno
+FROM citation
+WHERE status='unpaid';
+
+14] For each lot, generate the total number of citations given in all zones in the lot for a three month period (07/01/2020 - 09/30/2020)
+
+Start Date and End date range taken from Cli 
+Date in format yyyy-mm-dd
+
+SELECT lot, count(lot)
+FROM citation
+WHERE (date >= '$$$$$' AND date <='$$$$$' )
+GROUP BY lot;
+
+15] PayCitation ( ) procedure. Anyone can pay their citation by invoking this 
+(For our purposes, all this citation will do is change the status of citation from unpaid to paid).
+
+Take citation number as input
+
+UPDATE `dbms`.`citation`
+SET `status` = 'paid'
+WHERE `citationno` = '$$$$$';
+
+16] CheckVValidParking (CurrentTime, Date,Space#, Lot, License#): checks if car has valid
+permit in visitors lot.
+
+SELECT permitid
+FROM vpermit
+WHERE licenseno='$$$$$'
+
+If returns value then it has permit so now check if permit is expired 
+else Not Valid and IssueCitation() call with category='NoPermit' & fine='40' also need phone no here for issuing notification
+
+time in format hh:mm:ss
+date in format yyyy-mm-dd
+
+
+SELECT Temp.permitid
+FROM ( SELECT startdate, expdate, permitid 
+FROM vpermit 
+WHERE (exptime >= '$$$$$' AND starttime <= '$$$$$' AND licenseno = '$$$$$')) AS Temp
+WHERE (Temp.startdate >= '$$$$$' AND Temp.expdate <='$$$$$');
+
+If permitid returns then valid and check if correct lot and space number 
+else nothing return then make the IssueCitation() call with category='Expired Permit' & fine='25'
+
+SELECT permitid
+FROM vpermit
+WHERE(spaceno = '$$$$$', lotname='$$$$$');
+
+If permitid returns then valid
+else nothing return then make the IssueCitation() call with category='Invalid Permit' & fine='20'
+
+17] For each visitor’s parking zone, show the total amount of revenue generated (including
+pending citation fines) for each day in some given month and year.
+
+import datetime
+long_month_name = "<<<Month Name>>>"
+datetime_object = datetime.datetime.strptime(long_month_name, "%B")
+month_number = datetime_object.month
+print(month_number)
+
+Use the month number from above and year from question to generate the start and end date
+
+import calendar
+calendar.monthrange(year,month)
+
+Then use this to create the start and end dates 
+
+SELECT lot, date, sum(fine)
+FROM citation 
+WHERE (date >= '$$$$$' AND date <= '$$$$$')
+GROUP BY lot, date;
+
+18] AssignTypeToSpace ( ...…. ): This function will allow to add handicapp or electric spaces to lot with visitor spaces
+
+First check if the parking lot to be given type allows for visitors, Ask for parking lot name
+
+SELECT name
+FROM zone
+WHERE zones='V' and name='$$$$$'
+
+If YES then update by asking details like ###See if you can do something here as UPDATE needs specific parameters to run and needs to be very
+highly dynamic if we dont ask all the details### 
+
+visitor_handicap_space
+visitor_electric_space
+starting_space_visitor
+starting_space_handicap
+starting_Space_electric
+
+Then using this data : 
+
+UPDATE `dbms`.`space`
+SET
+`parkinglot` = <{parkinglot: }>,
+`visitor_spaces` = <{visitor_spaces: }>,
+`visitor_handicap_space` = <{visitor_handicap_space: }>,
+`visitor_electric_space` = <{visitor_electric_space: }>,
+`starting_space_visitor` = <{starting_space_visitor: }>,
+`starting_space_handicap` = <{starting_space_handicap: }>,
+`starting_space_electric` = <{starting_space_electric: }>
+WHERE `parkinglot` = '$$$$$';
+
+19] ExitLot(): takes a permit number as input makes the status of a visitor space available
+and computes any time overages for the reservation (in the case that a visitor
+overstayed their booked amount of time). This can just be recorded as a time overage
+for the permit.
+
+current date store in a variable
+current time to be stored in a variable
+
+SELECT Temp.permitid
+FROM ( SELECT permitid,
+CASE 
+	WHEN (expdate > '$$$$$' AND permitid  = '$$$$$') THEN permitid
+	WHEN (expdate = '$$$$$' AND exptime >= '$$$$$' AND permitid = '$$$$$') THEN permitid
+    ELSE 0
+END AS Valid
+FROM vpermit) AS Temp
+WHERE Temp.permitid = Temp.Valid;
+
+If value returned then no citation, update the space availability instead : 
+
+First fetch the type and lotname for that permit who exited the parking lot
+
+SELECT type, lotname
+FROM vpermit
+WHERE permitid='$$$$$';
+
+For regular : 
+
+UPDATE `dbms`.`space`
+SET
+`visitor_spaces` = visitor_spaces + 1,
+`starting_space_visitor` = starting_space_visitor -1
+WHERE `parkinglot` = '$$$$$';
+
+For handicap : 
+
+UPDATE `dbms`.`space`
+SET
+`visitor_spaces` = visitor_spaces + 1,
+`visitor_handicap_space` = visitor_handicap_space + 1,
+`starting_space_handicap` = starting_space_handicap - 1
+WHERE `parkinglot` = '$$$$$';
+
+For electric : 
+
+UPDATE `dbms`.`space`
+SET
+`visitor_spaces` = visitor_spaces + 1,
+`visitor_electric_space` = visitor_electric_space + 1,
+`starting_space_electric` = starting_space_electric - 1
+WHERE `parkinglot` = '$$$$$';
+
+If no value returned then invalid and invoke the Issue Citation () with category='expired permit' and fine='25'
+
+20] IssueCitation () is a procedure that generates with appropriate information as described above.
+
+<<<<Function to generate unique citation number>>>>
+
+Take carlicenseno from the violated permit when checked on Exitlot()/Check Valid parking of Visitor()/Check Validity for Non visitor()
+time = current time when violation occurs or check made
+lot from violated permit when checked
+status = 'unpaid' initially
+date = current date when violation occurs
+due_date = date + 30 days
+category and fine as per the violation.
+
+SELECT model, color
+FROM vehicles
+WHERE carlicenseno='$$$$$';
+
+INSERT INTO `dbms`.`citation`
+(`citationno`,`carlicenseno`,`category`,`fine`,`time`,`lot`,`status`,`date`,'due_date','model','color')
+VALUES ($$$$$,'$$$$$','$$$$$',$$$$$,'$$$$$','$$$$$','$$$$$','$$$$$','$$$$$','$$$$$','$$$$$');
+
+This will insert the below command in notification : 
+
+SELECT univid
+FROM vehicles
+WHERE carlicenseno ='$$$$$';   ##If returns a value then Non visitor notification, if NULL returned then Visitor
+
+If visitor : 
+
+INSERT INTO `dbms`.`notification` (`citationno`,`phoneno`,`univid`)
+SELECT c.citationno, p.phoneno, NULL
+FROM citation c, vuser p
+WHERE (c.citationno='$$$$$' AND c.carlicenseno = p.carlicenseno);
+
+If non visitor :
+
+INSERT INTO `dbms`.`notification` (`citationno`,`phoneno`,`univid`)
+SELECT c.citationno, NULL, u.univid
+FROM citation c, vehicles u
+WHERE (c.citationno='$$$$$' AND u.carlicenseno = c.carlicenseno);
